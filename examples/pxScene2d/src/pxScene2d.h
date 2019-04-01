@@ -652,12 +652,13 @@ public:
   rtError suspend(const rtValue& v, bool& b);
   rtError resume(const rtValue& v, bool& b);
   rtError textureMemoryUsage(rtValue& v);
+
+  static rtError getScene(int /*numArgs*/, const rtValue* /*args*/, rtValue* result, void* ctx);
   
 protected:
 
   static rtError printFunc(int /*numArgs*/, const rtValue* /*args*/, rtValue* result, void* ctx);
 
-  static rtError getScene(int /*numArgs*/, const rtValue* /*args*/, rtValue* result, void* ctx);
   static rtError makeReady(int /*numArgs*/, const rtValue* /*args*/, rtValue* result, void* ctx);
 
   static rtError getContextID(int /*numArgs*/, const rtValue* /*args*/, rtValue* result, void* /*ctx*/);
