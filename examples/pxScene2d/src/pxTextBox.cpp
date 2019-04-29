@@ -29,7 +29,6 @@ extern pxContext context;
 #include <math.h>
 #include <map>
 #include <stdlib.h>
-#include <cstring>
 
 static const char      isNewline_chars[] = "\n\v\f\r";
 static const char isWordBoundary_chars[] = " \t/:&,;.?!";
