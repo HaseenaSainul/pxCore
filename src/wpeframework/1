@@ -1,0 +1,201 @@
+/*
+ * Copyright (C) 2017 Metrological
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef spark_wpeframework_compostor_h
+#define spark_wpeframework_compostor_h
+
+#include <WPEFramework/core/core.h>
+#include <WPEFramework/compositor/Client.h>
+#include <cstdlib>
+#include <sstream>
+
+
+template <class T>
+inline std::string to_string(const T& t)
+{
+    std::stringstream ss;
+    ss << t;
+    return ss.str();
+}
+
+namespace WPEFramework {
+
+class Keyboard : public WPEFramework::Compositor::IDisplay::IKeyboard {
+private:
+    Keyboard(const Keyboard&) = delete;
+    Keyboard& operator=(const Keyboard&) = delete;
+
+public:
+    Keyboard() {
+    }
+    virtual ~Keyboard() {
+    }
+
+public:
+    virtual void AddRef() const {
+    }
+    virtual uint32_t Release() const {
+    }
+    virtual void KeyMap(const char information[], const uint16_t size) {
+    }
+    virtual void Key(const uint32_t key,
+            const IKeyboard::state action, const uint32_t time) {
+    }
+    virtual void Modifiers(uint32_t depressedMods,
+            uint32_t latchedMods, uint32_t lockedMods, uint32_t group) {
+    }
+    virtual void Repeat(int32_t rate, int32_t delay) {
+    }
+    virtual void Direct(const uint32_t code, const state action);
+};
+
+class Display : public Core::Thread {
+
+public:
+    enum DisplayStatus {
+        NotInUse = 0,
+        Attached = 1,
+        Detached = 2
+    };
+
+public:
+    Display(const Display&);
+    Display& operator=(const Display&);
+
+    Display()
+    : _display(nullptr)
+    , _graphicsSurface(nullptr)
+    , _displayStatus(DisplayStatus::Detached)
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        time_t epoch_time = (tv.tv_sec * 1000) + (tv.tv_usec/1000);
+
+        const char* callsign(std::getenv("CLIENT_IDENTIFIER"));
+        if (callsign == nullptr) {
+            _display_name = "Netflix" + to_string(epoch_time);
+        }
+        else {
+            const char* delimiter = nullptr;
+            if ((delimiter = strchr(callsign, ',')) == nullptr) {
+                _display_name = callsign;
+            }
+            else {
+                _display_name = std::string(callsign, (delimiter - callsign));
+            }
+        }
+        Run();
+    }
+    void CreateDisplayClient()
+    {
+        _display = WPEFramework::Compositor::IDisplay::Instance(_display_name);
+
+        const char* width_str(std::getenv("SCREEN_WIDTH"));
+        uint32_t width = (width_str == nullptr ? 1280 : atoi(width_str));
+        const char* height_str(std::getenv("SCREEN_HEIGHT"));
+        uint32_t height = (height_str == nullptr ? 720 : atoi(height_str));
+
+        _graphicsSurface = _display->Create(_display_name, width, height);
+        printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+        _graphicsSurface->Keyboard(&_keyboardHandle);
+    }
+
+    ~Display() {
+        Stop();
+        Wait(Thread::BLOCKED | Thread::STOPPED, Core::infinite);
+    };
+
+    static Display* Instance() {
+        static Display myDisplay;
+        myDisplay.AddRef();
+        myDisplay._displayStatus = DisplayStatus::Attached;
+        printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+        return (&myDisplay);
+    }
+    void ReleaseDisplayClient() {
+        _displayStatus = DisplayStatus::Detached;
+
+        _display->Release();
+        _graphicsSurface = nullptr;
+    }
+    EGLNativeDisplayType Native() {
+        return _display->Native();
+    }
+    WPEFramework::Compositor::IDisplay::ISurface* GetGraphicsSurface() {
+        return _graphicsSurface;
+    }
+    void WaitForInput(llong waitMS)
+    {
+        int fd = _display->FileDescriptor();
+        fd_set fdSet;
+        FD_ZERO(&fdSet);
+        FD_SET(fd, &fdSet);
+
+        int waitUntil = waitMS == -1 ? 0 : waitMS;
+        struct timeval tv;
+        tv.tv_sec = waitUntil / 1000;
+        tv.tv_usec = (waitUntil % 1000) * netflix::MicroSecondsPerMillisecond;
+        const int ret = select(fd+1, &fdSet, NULL, NULL, &tv);
+        if (ret > 0) {
+            _display->Process(1);
+        }
+    }
+
+    void AddRef() const {
+        if (++_refCount == 1) {
+            const_cast<Display*>(this)->CreateDisplayClient();
+        }
+    }
+    uint32_t Release() const {
+        if (--_refCount == 0) {
+             const_cast<Display*>(this)->ReleaseDisplayClient();
+        }
+        return 0;
+    }
+
+private:
+    virtual uint32_t Worker()
+    {
+       while (IsRunning() == true) {
+           if (_displayStatus == DisplayStatus::Attached) {
+               _display->Process(1);
+           }
+       }
+       return (WPEFramework::Core::infinite);
+    }
+
+private:
+    std::string _display_name;
+    Keyboard _keyboardHandle;
+    WPEFramework::Compositor::IDisplay* _display;
+    DisplayStatus _displayStatus;
+    WPEFramework::Compositor::IDisplay::ISurface* _graphicsSurface;
+    mutable uint32_t _refCount;
+};
+
+} // namespace WPEFramework
+
+#endif // spark_wpeframework_compostor_h
