@@ -41,9 +41,6 @@ limitations under the License.
 #define WAYLAND_PX_CORE_FPS 30
 
 std::vector<pxWindowNative*> pxWindowNative::mWindowVector;
-bool pxWindowNative::mEventLoopTimerStarted = false;
-float pxWindowNative::mEventLoopInterval = 1000.0 / (float)WAYLAND_PX_CORE_FPS;
-timer_t pxWindowNative::mRenderTimerId;
 
 bool exitFlag = false;
 
@@ -233,75 +230,6 @@ void pxWindowNative::cleanup()
     wpeDisplay = nullptr;
 
     eglReleaseThread();
-}
-
-int pxWindowNative::set_cloexec_or_close(int fd)
-{
-long flags;
-
-    if (fd == -1)
-        return -1;
-
-    flags = fcntl(fd, F_GETFD);
-    if (flags == -1)
-        goto err;
-
-    if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1)
-        goto err;
-
-    return fd;
-
-err:
-    close(fd);
-    return -1;
-}
-
-int pxWindowNative::create_tmpfile_cloexec(char *tmpname)
-{
-    int fd;
-
-    fd = mkstemp(tmpname);
-    if (fd >= 0) {
-        fd = set_cloexec_or_close(fd);
-        unlink(tmpname);
-    }
-
-    return fd;
-}
-
-int pxWindowNative::os_create_anonymous_file(off_t size)
-{
-    static const char templateFile[] = "/pxcore-shared-XXXXXX";
-    const char *path;
-    char *name;
-    int fd;
-
-    path = getenv("XDG_RUNTIME_DIR");
-    if (!path)
-    {
-        return -1;
-    }
-
-    name = (char*)malloc(strlen(path) + sizeof(templateFile));
-    if (!name)
-        return -1;
-
-    strcpy(name, path);
-    strcat(name, templateFile);
-
-    fd = create_tmpfile_cloexec(name);
-
-    free(name);
-
-    if (fd < 0)
-        return -1;
-
-    if (ftruncate(fd, size) < 0)
-    {
-        close(fd);
-        return -1;
-    }
-    return fd;
 }
 
 void pxWindowNative::animateAndRender()

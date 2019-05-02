@@ -53,7 +53,7 @@
 #include <GL/glut.h>
 #endif
 #include <GL/gl.h>
-#endif //PX_PLATFORM_WAYLAND_EGL
+#endif //PX_PLATFORM_WAYLAND_EGL || defined(PX_PLATFORM_GENERIC_EGL) || defined(PX_PLATFORM_WPEFRAMEWORK)
 #endif
 
 #include "pxContextUtils.h"
@@ -130,11 +130,11 @@ enum pxCurrentGLProgram { PROGRAM_UNKNOWN = 0, PROGRAM_SOLID_SHADER,  PROGRAM_A_
 
 pxCurrentGLProgram currentGLProgram = PROGRAM_UNKNOWN;
 
-#if defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL)
+#if defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL) || defined(PX_PLATFORM_WPEFRAMEWORK)
 extern EGLContext defaultEglContext;
 extern EGLDisplay defaultEglDisplay;
 extern EGLSurface defaultEglSurface;
-#endif //PX_PLATFORM_GENERIC_EGL || PX_PLATFORM_WAYLAND_EGL
+#endif //PX_PLATFORM_GENERIC_EGL || PX_PLATFORM_WAYLAND_EGL || defined(PX_PLATFORM_WPEFRAMEWORK)
 
 // TODO get rid of this global crap
 
@@ -451,7 +451,7 @@ public:
   {
     if (mFramebufferId!= 0)
     {
-#if (defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL)) && !defined(PXSCENE_DISABLE_PXCONTEXT_EXT)
+#if (defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL) || defined(PX_PLATFORM_WPEFRAMEWORK)) && !defined(PXSCENE_DISABLE_PXCONTEXT_EXT)
       if (mAntiAliasing)
       {
         GLint currentFBO = 0;
@@ -501,7 +501,7 @@ public:
       glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                              GL_TEXTURE_2D, mTextureId, 0);
 
-#if (defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL)) && !defined(PXSCENE_DISABLE_PXCONTEXT_EXT)
+#if (defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL) || defined(PX_PLATFORM_WPEFRAMEWORK)) && !defined(PXSCENE_DISABLE_PXCONTEXT_EXT)
       if (mAntiAliasing)
       {
         glFramebufferTexture2DMultisampleEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTextureId, 0, 2);
@@ -586,7 +586,7 @@ private:
   bool mBindTexture;
   bool mAlphaOnly;
 
-#if (defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL)) && !defined(PXSCENE_DISABLE_PXCONTEXT_EXT)
+#if (defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL) || defined(PX_PLATFORM_WPEFRAMEWORK)) && !defined(PXSCENE_DISABLE_PXCONTEXT_EXT)
   bool mAntiAliasing;
 #endif
 
@@ -2295,12 +2295,12 @@ void pxContext::init()
 
   rtLogInfo("context garbage collect throttle set to %f seconds", garbageCollectThrottleInSeconds);
 
-#if defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL)
+#if defined(PX_PLATFORM_WAYLAND_EGL) || defined(PX_PLATFORM_GENERIC_EGL) || defined(PX_PLATFORM_WPEFRAMEWORK)
   defaultEglContext = eglGetCurrentContext();
   defaultEglDisplay = eglGetCurrentDisplay();
   defaultEglSurface = eglGetCurrentSurface(EGL_DRAW);
   rtLogDebug("current context in init: %p", defaultEglContext);
-#endif //PX_PLATFORM_GENERIC_EGL || PX_PLATFORM_WAYLAND_EGL
+#endif //PX_PLATFORM_GENERIC_EGL || PX_PLATFORM_WAYLAND_EGL || defined(PX_PLATFORM_WPEFRAMEWORK)
 
   std::srand(unsigned (std::time(0)));
 }

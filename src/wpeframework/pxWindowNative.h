@@ -87,13 +87,7 @@ protected:
     void setLastAnimationTime(double time);
     void drawFrame();
 
-
     bool createWindowSurface();
-
-    //FIXME: check these apis are required or not
-    int set_cloexec_or_close(int fd);
-    int create_tmpfile_cloexec(char *tmpname);
-    int os_create_anonymous_file(off_t size);
 
     int mTimerFPS;
     int mLastWidth, mLastHeight;
@@ -102,11 +96,6 @@ protected:
     bool mVisible;
     bool mDirty;
     
-    //timer variables
-    static bool mEventLoopTimerStarted;
-    static float mEventLoopInterval;
-    static timer_t mRenderTimerId;
-
     //egl content
     void initializeEgl();
     EGLNativeWindowType *mEglNativeWindow;

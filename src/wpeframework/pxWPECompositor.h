@@ -56,13 +56,13 @@ public:
 
 public:
     virtual void AddRef() const {}
-    virtual uint32_t Release() const {}
-    virtual void KeyMap(const char information[], const uint16_t size) {}
+    virtual uint32_t Release() const { return 0; }
+    virtual void KeyMap(const char* /*information*/, const uint16_t /*size*/) {}
     virtual void Key(const uint32_t key,
-            const IKeyboard::state action, const uint32_t time) {}
+            const IKeyboard::state /*action*/, const uint32_t /*time*/) {}
     virtual void Modifiers(uint32_t depressedMods,
             uint32_t latchedMods, uint32_t lockedMods, uint32_t group);
-    virtual void Repeat(int32_t rate, int32_t delay) {}
+    virtual void Repeat(int32_t /*rate*/, int32_t /*delay*/) {}
     virtual void Direct(const uint32_t code, const state action);
 
 private:
@@ -97,7 +97,7 @@ public:
         const char* callsign(std::getenv("CLIENT_IDENTIFIER"));
         if (callsign == nullptr)
         {
-            _display_name = "Netflix" + to_string(epoch_time);
+            _display_name = "Spark" + to_string(epoch_time);
         }
         else
         {
