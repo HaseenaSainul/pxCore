@@ -58,7 +58,7 @@ public:
     virtual void AddRef() const {}
     virtual uint32_t Release() const { return 0; }
     virtual void KeyMap(const char* /*information*/, const uint16_t /*size*/) {}
-    virtual void Key(const uint32_t key,
+    virtual void Key(const uint32_t /*key*/,
             const IKeyboard::state /*action*/, const uint32_t /*time*/) {}
     virtual void Modifiers(uint32_t depressedMods,
             uint32_t latchedMods, uint32_t lockedMods, uint32_t group);
@@ -87,8 +87,8 @@ public:
 
     Display()
     : _display(nullptr)
-    , _graphicsSurface(nullptr)
     , _displayStatus(DisplayStatus::Detached)
+    , _graphicsSurface(nullptr)
     {
         struct timeval tv;
         gettimeofday(&tv, NULL);
